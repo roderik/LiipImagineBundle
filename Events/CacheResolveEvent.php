@@ -4,7 +4,7 @@ namespace Liip\ImagineBundle\Events;
 
 use Symfony\Component\EventDispatcher\Event;
 
-class CacheResolveEvent extends Event
+class CacheResolveEvent extends Event implements CachePathFilterInterface
 {
     /**
      * Resource path.

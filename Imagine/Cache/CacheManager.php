@@ -3,6 +3,8 @@
 namespace Liip\ImagineBundle\Imagine\Cache;
 
 use Liip\ImagineBundle\Binary\BinaryInterface;
+use Liip\ImagineBundle\Events\CacheIsStoredEvent;
+use Liip\ImagineBundle\Events\CacheStoreEvent;
 use Liip\ImagineBundle\Imagine\Cache\Resolver\ResolverInterface;
 use Liip\ImagineBundle\Imagine\Filter\FilterConfiguration;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -185,7 +187,10 @@ class CacheManager
      */
     public function isStored($path, $filter)
     {
-        return $this->getResolver($filter)->isStored($path, $filter);
+        $preEvent = new CacheIsStoredEvent($path, $filter);
+        $this->dispatcher->dispatch(ImagineEvents::PRE_IS_STORED, $preEvent);
+
+        return $this->getResolver($filter)->isStored($preEvent->getPath(), $preEvent->getFilter());
     }
 
     /**
@@ -224,7 +229,10 @@ class CacheManager
      */
     public function store(BinaryInterface $binary, $path, $filter)
     {
-        $this->getResolver($filter)->store($binary, $path, $filter);
+        $preEvent = new CacheStoreEvent($binary, $path, $filter);
+        $this->dispatcher->dispatch(ImagineEvents::PRE_STORE, $preEvent);
+
+        $this->getResolver($filter)->store($preEvent->getBinary(), $preEvent->getPath(), $preEvent->getFilter());
     }
 
     /**

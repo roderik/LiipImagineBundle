@@ -86,6 +86,7 @@
             <argument type="service" id="liip_imagine.binary.mime_type_guesser" />
             <argument type="service" id="liip_imagine.extension_guesser" />
             <argument type="service" id="liip_imagine.filter.configuration" />
+            <argument type="service" id="event_dispatcher" />
             <argument>%liip_imagine.binary.loader.default%</argument>
             <argument>%liip_imagine.default_image%</argument>
         </service>
@@ -267,5 +268,16 @@
             <argument>%liip_imagine.jpegoptim.binary%</argument>
             <tag name="liip_imagine.filter.post_processor" post_processor="jpegoptim" />
         </service>
+
+        <service id="liip_imagine.listener.cache_content_type_url" class="Liip\ImagineBundle\EventListener\CacheContentTypeUrlListener">
+            <argument type="service" id="liip_imagine.filter.configuration" />
+            <argument type="service" id="router" />
+            <argument type="service" id="logger" on-invalid="ignore" />
+            <tag name="kernel.event_listener" event="liip_imagine.post_resolve" method="handlePostResolve" />
+            <tag name="kernel.event_listener" event="liip_imagine.pre_resolve" method="handlePreResolve" />
+            <tag name="kernel.event_listener" event="liip_imagine.pre_store" method="handlePreStore" />
+            <tag name="kernel.event_listener" event="liip_imagine.pre_is_stored" method="handlePreIsStored" />
+        </service>
+
     </services>
 </container>

@@ -3,10 +3,13 @@
 namespace Liip\ImagineBundle\Imagine\Data;
 
 use Liip\ImagineBundle\Binary\Loader\LoaderInterface;
+use Liip\ImagineBundle\Events\DataFindEvent;
 use Liip\ImagineBundle\Imagine\Filter\FilterConfiguration;
 use Liip\ImagineBundle\Binary\MimeTypeGuesserInterface;
+use Liip\ImagineBundle\ImagineEvents;
 use Liip\ImagineBundle\Model\Binary;
 use Liip\ImagineBundle\Binary\BinaryInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\File\MimeType\ExtensionGuesserInterface;
 
 class DataManager
@@ -42,22 +45,30 @@ class DataManager
     protected $loaders = array();
 
     /**
-     * @param MimeTypeGuesserInterface  $mimeTypeGuesser
+     * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+     */
+    protected $dispatcher;
+
+    /**
+     * @param MimeTypeGuesserInterface $mimeTypeGuesser
      * @param ExtensionGuesserInterface $extensionGuesser
-     * @param FilterConfiguration       $filterConfig
-     * @param string                    $defaultLoader
-     * @param string                    $globalDefaultImage
+     * @param FilterConfiguration $filterConfig
+     * @param EventDispatcherInterface $dispatcher
+     * @param string $defaultLoader
+     * @param string $globalDefaultImage
      */
     public function __construct(
         MimeTypeGuesserInterface $mimeTypeGuesser,
         ExtensionGuesserInterface $extensionGuesser,
         FilterConfiguration $filterConfig,
+        EventDispatcherInterface $dispatcher,
         $defaultLoader = null,
         $globalDefaultImage = null
     ) {
         $this->mimeTypeGuesser = $mimeTypeGuesser;
         $this->filterConfig = $filterConfig;
         $this->defaultLoader = $defaultLoader;
+        $this->dispatcher = $dispatcher;
         $this->extensionGuesser = $extensionGuesser;
         $this->globalDefaultImage = $globalDefaultImage;
     }
@@ -111,9 +122,12 @@ class DataManager
      */
     public function find($filter, $path)
     {
-        $loader = $this->getLoader($filter);
+        $preEvent = new DataFindEvent($path, $filter);
+        $this->dispatcher->dispatch(ImagineEvents::PRE_FIND, $preEvent);
 
-        $binary = $loader->find($path);
+        $loader = $this->getLoader($preEvent->getFilter());
+
+        $binary = $loader->find($preEvent->getPath());
         if (!$binary instanceof BinaryInterface) {
             $mimeType = $this->mimeTypeGuesser->guess($binary);
 
